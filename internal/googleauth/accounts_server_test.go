@@ -989,11 +989,12 @@ func TestManageServer_HandleOAuthCallback_MigratesAndDeletesAliasAfterSetToken(t
 	}
 }
 
+// MODFIED: Allow listening on non-loopback addresses for management server. This is useful for testing in containerized environments.
 func TestStartManageServerRejectsNonLoopbackListenAddr(t *testing.T) {
 	launcher := newTestManagerLauncher(t, nil)
 
 	err := launcher.Start(context.Background(), ManageServerOptions{
-		ListenAddr: "0.0.0.0:0",
+		ListenAddr: "1.2.3.4:43843",
 		Timeout:    50 * time.Millisecond,
 	})
 	if err == nil {
@@ -1002,6 +1003,18 @@ func TestStartManageServerRejectsNonLoopbackListenAddr(t *testing.T) {
 
 	if !errors.Is(err, errNonLoopbackManageAddr) {
 		t.Fatalf("expected errNonLoopbackManageAddr, got %v", err)
+	}
+}
+
+func TestStartManageServerAllowsUnspecifiedListenAddr(t *testing.T) {
+	launcher := newTestManagerLauncher(t, nil)
+
+	err := launcher.Start(context.Background(), ManageServerOptions{
+		ListenAddr: "0.0.0.0:0",
+		Timeout:    50 * time.Millisecond,
+	})
+	if err != nil {
+		t.Fatalf("Start with unspecified listen addr: %v", err)
 	}
 }
 

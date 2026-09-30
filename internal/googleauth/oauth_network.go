@@ -70,7 +70,9 @@ func validateManagementListenAddr(listenAddr string) error {
 	}
 
 	ip := net.ParseIP(host)
-	if ip == nil || !ip.IsLoopback() {
+	// MODFIED: Allow listening on non-loopback addresses for management server. This is useful for testing in containerized environments.
+	// if ip == nil || !ip.IsLoopback() {
+	if ip == nil || (!ip.IsLoopback() && !ip.IsUnspecified()) {
 		return fmt.Errorf("%w: %s", errNonLoopbackManageAddr, listenAddr)
 	}
 

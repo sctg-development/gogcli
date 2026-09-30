@@ -259,8 +259,9 @@ type AuthManageCmd struct {
 	ForceConsent bool          `name:"force-consent" help:"Force consent screen when adding accounts"`
 	ServicesCSV  string        `name:"services" help:"Services to authorize: user|all-user or comma-separated ${auth_services}; explicit opt-in: adsense, photospicker; all means all default user OAuth services. Workspace service-account-only services: admin, groups, keep" default:"user"`
 	Timeout      time.Duration `name:"timeout" help:"Server timeout duration" default:"10m"`
-	ListenAddr   string        `name:"listen-addr" help:"Loopback address to listen on for the accounts manager (for example 127.0.0.1:8080 or [::1]:8080)"`
-	RedirectHost string        `name:"redirect-host" help:"Hostname for OAuth callback; builds https://{host}/oauth2/callback"`
+	// MODIFIED: Allow listening on non-loopback addresses for management server. This is useful for testing in containerized environments.
+	ListenAddr   string `name:"listen-addr" help:"Loopback address or unspecified address to listen on for the accounts manager (for example 127.0.0.1:8080 or [::1]:8080), or 0.0.0.0:8080"`
+	RedirectHost string `name:"redirect-host" help:"Hostname for OAuth callback; builds https://{host}/oauth2/callback"`
 }
 
 func (c *AuthManageCmd) Run(ctx context.Context, flags *RootFlags) error {
