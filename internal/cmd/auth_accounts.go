@@ -261,6 +261,7 @@ type AuthManageCmd struct {
 	Timeout      time.Duration `name:"timeout" help:"Server timeout duration" default:"10m"`
 	// MODIFIED: Allow listening on non-loopback addresses for management server. This is useful for testing in containerized environments.
 	ListenAddr   string `name:"listen-addr" help:"Loopback address or unspecified address to listen on for the accounts manager (for example 127.0.0.1:8080 or [::1]:8080), or 0.0.0.0:8080"`
+	BasePath     string `name:"base-path" help:"URL path prefix to serve the accounts manager under, for use behind a reverse proxy (for example /gog)"`
 	RedirectHost string `name:"redirect-host" help:"Hostname for OAuth callback; builds https://{host}/oauth2/callback"`
 }
 
@@ -269,11 +270,15 @@ func (c *AuthManageCmd) Run(ctx context.Context, flags *RootFlags) error {
 	if err != nil {
 		return err
 	}
+	basePath := googleauth.NormalizeBasePath(c.BasePath)
 	redirectURI := ""
 	if strings.TrimSpace(c.RedirectHost) != "" {
 		redirectURI, err = redirectURIFromHost(c.RedirectHost)
 		if err != nil {
 			return err
+		}
+		if basePath != "" {
+			redirectURI = strings.TrimSuffix(redirectURI, "/oauth2/callback") + basePath + "/oauth2/callback"
 		}
 	}
 
@@ -284,10 +289,12 @@ func (c *AuthManageCmd) Run(ctx context.Context, flags *RootFlags) error {
 		Client:       authclient.ClientOverrideFromContext(ctx),
 		ListenAddr:   strings.TrimSpace(c.ListenAddr),
 		RedirectURI:  redirectURI,
+		BasePath:     basePath,
 	}
 	if err := dryRunExit(ctx, flags, "auth.manage", map[string]any{
 		"client":        opts.Client,
 		"force_consent": opts.ForceConsent,
+		"base_path":     opts.BasePath,
 		"listen_addr":   opts.ListenAddr,
 		"redirect_uri":  opts.RedirectURI,
 		"services":      opts.Services,

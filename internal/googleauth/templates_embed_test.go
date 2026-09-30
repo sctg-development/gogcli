@@ -12,7 +12,7 @@ func TestEmbeddedTemplates_Parse(t *testing.T) {
 		src  string
 		data any
 	}{
-		{name: "accounts", src: accountsTemplate, data: struct{ CSRFToken string }{CSRFToken: "csrf"}},
+		{name: "accounts", src: accountsTemplate, data: struct{ CSRFToken, BasePath string }{CSRFToken: "csrf"}},
 		{name: "success_with_email", src: successTemplate, data: successTemplateData{
 			Email:            "a@b.com",
 			Services:         []string{"gmail", "drive"},

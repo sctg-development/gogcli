@@ -46,6 +46,17 @@ func resolveServerRedirectURI(ln net.Listener, override string) string {
 	return redirectURIFromListener(ln)
 }
 
+// NormalizeBasePath returns basePath with a single leading slash and no trailing
+// slash; empty or "/" yields "".
+func NormalizeBasePath(basePath string) string {
+	basePath = strings.Trim(strings.TrimSpace(basePath), "/")
+	if basePath == "" {
+		return ""
+	}
+
+	return "/" + basePath
+}
+
 func listenerBaseURL(ln net.Listener) string {
 	addr := ln.Addr().(*net.TCPAddr)
 	return "http://" + net.JoinHostPort(listenerURLHost(addr), strconv.Itoa(addr.Port))

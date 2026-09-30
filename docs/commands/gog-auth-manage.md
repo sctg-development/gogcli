@@ -20,6 +20,7 @@ gog auth manage (login) [flags]
 | --- | --- | --- | --- |
 | `--access-token` | `string` |  | Use provided access token directly (bypasses stored refresh tokens; token expires in ~1h) |
 | `-a`<br>`--account`<br>`--acct` | `string` |  | Account email, alias, or auto for authenticated Google API commands |
+| `--base-path` | `string` |  | URL path prefix to serve the accounts manager under, for use behind a reverse proxy (for example /gog) |
 | `--client` | `string` |  | OAuth client name (selects stored credentials + token bucket) |
 | `--color` | `string` | auto | Color output: auto\|always\|never |
 | `--disable-commands` | `string` |  | Comma-separated list of disabled commands; dot paths allowed |
@@ -32,7 +33,7 @@ gog auth manage (login) [flags]
 | `-h`<br>`--help` | `kong.helpFlag` |  | Show context-sensitive help. |
 | `--home` | `string` |  | Override gogcli config/data/state/cache root (equivalent to GOG_HOME) |
 | `-j`<br>`--json`<br>`--machine` | `bool` | false | Output JSON to stdout (best for scripting) |
-| `--listen-addr` | `string` |  | Loopback address to listen on for the accounts manager (for example 127.0.0.1:8080 or [::1]:8080) |
+| `--listen-addr` | `string` |  | Loopback address or unspecified address to listen on for the accounts manager (for example 127.0.0.1:8080 or [::1]:8080), or 0.0.0.0:8080 |
 | `--no-input`<br>`--non-interactive`<br>`--noninteractive` | `bool` |  | Never prompt; fail instead (useful for CI) |
 | `-p`<br>`--plain`<br>`--tsv` | `bool` | false | Output stable, parseable text to stdout (TSV; no colors) |
 | `--quota-project` | `string` |  | Google Cloud project to bill for API usage (sent as X-Goog-User-Project; some APIs require it with --access-token or ADC) |

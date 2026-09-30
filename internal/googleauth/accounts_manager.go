@@ -42,6 +42,7 @@ type ManagerOptions struct {
 	ForceConsent bool
 	Client       string
 	RedirectURI  string
+	BasePath     string
 }
 
 // ManagerDependencies contains the accounts manager's external operations.
@@ -97,6 +98,7 @@ func NewManagerApplication(opts ManagerOptions, deps ManagerDependencies) (*Mana
 	}
 	opts.Client = client
 	opts.RedirectURI = strings.TrimSpace(opts.RedirectURI)
+	opts.BasePath = NormalizeBasePath(opts.BasePath)
 
 	switch {
 	case deps.Tokens == nil:
@@ -150,6 +152,12 @@ func NewManagerApplication(opts ManagerOptions, deps ManagerDependencies) (*Mana
 	mux.HandleFunc("/set-default", app.handleSetDefault)
 	mux.HandleFunc("/remove-account", app.handleRemoveAccount)
 	app.handler = mux
+	if opts.BasePath != "" {
+		outer := http.NewServeMux()
+		outer.Handle(opts.BasePath+"/", http.StripPrefix(opts.BasePath, mux))
+		outer.Handle(opts.BasePath, http.RedirectHandler(opts.BasePath+"/", http.StatusMovedPermanently))
+		app.handler = outer
+	}
 
 	return app, nil
 }
@@ -174,8 +182,10 @@ func (app *ManagerApplication) handleAccountsPage(w http.ResponseWriter, r *http
 
 	data := struct {
 		CSRFToken string
+		BasePath  string
 	}{
 		CSRFToken: app.csrfToken,
+		BasePath:  app.opts.BasePath,
 	}
 
 	_ = app.accountsPage.Execute(w, data)
@@ -782,7 +792,7 @@ func writeJSONError(w http.ResponseWriter, msg string, status int) {
 }
 
 func (app *ManagerApplication) renderSuccessPage(w http.ResponseWriter, email string, services []string) {
-	renderSuccessTemplate(w, app.successPage, email, services, app.csrfToken)
+	renderSuccessTemplate(w, app.successPage, email, services, app.csrfToken, app.opts.BasePath)
 }
 
 func renderSuccessTemplate(
@@ -791,6 +801,7 @@ func renderSuccessTemplate(
 	email string,
 	services []string,
 	csrfToken string,
+	basePath string,
 ) {
 	userServices := UserServices()
 	allServices := make([]string, 0, len(userServices))
@@ -805,6 +816,7 @@ func renderSuccessTemplate(
 		AllServices:      allServices,
 		CountdownSeconds: postSuccessDisplaySeconds,
 		CSRFToken:        csrfToken,
+		BasePath:         basePath,
 	}
 	_ = tmpl.Execute(w, data)
 }

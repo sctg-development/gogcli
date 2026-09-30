@@ -777,6 +777,7 @@
 
     <script>
         const csrfToken = '{{.CSRFToken}}';
+        const basePath = {{.BasePath}};
         let accounts = [];
 
         // Generate a gradient based on email first letter
@@ -791,7 +792,7 @@
         // Load accounts on page load
         async function loadAccounts() {
             try {
-                const response = await fetch('/accounts');
+                const response = await fetch(basePath + '/accounts');
                 const data = await response.json();
                 accounts = data.accounts || [];
                 renderAccounts();
@@ -865,18 +866,18 @@
 
         function addAccount() {
             // Redirect to OAuth flow
-            window.location.href = '/auth/start?csrf=' + encodeURIComponent(csrfToken);
+            window.location.href = basePath + '/auth/start?csrf=' + encodeURIComponent(csrfToken);
         }
 
         function upgradePermissions(email, event) {
             event.stopPropagation();
             // Redirect to OAuth flow with force consent to get all permissions
-            window.location.href = '/auth/upgrade?email=' + encodeURIComponent(email) + '&csrf=' + encodeURIComponent(csrfToken);
+            window.location.href = basePath + '/auth/upgrade?email=' + encodeURIComponent(email) + '&csrf=' + encodeURIComponent(csrfToken);
         }
 
         async function setDefault(email) {
             try {
-                const response = await fetch('/set-default', {
+                const response = await fetch(basePath + '/set-default', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -898,7 +899,7 @@
                 return;
             }
             try {
-                const response = await fetch('/remove-account', {
+                const response = await fetch(basePath + '/remove-account', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',

@@ -24,6 +24,7 @@ type ManageServerOptions struct {
 	Client       string
 	ListenAddr   string
 	RedirectURI  string
+	BasePath     string
 }
 
 type ManagerListenFunc func(context.Context, string, string) (net.Listener, error)
@@ -98,6 +99,8 @@ func (launcher *ManagerLauncher) Start(ctx context.Context, opts ManageServerOpt
 		return validationErr
 	}
 
+	opts.BasePath = NormalizeBasePath(opts.BasePath)
+
 	if strings.TrimSpace(opts.RedirectURI) != "" {
 		resolvedRedirectURI, normalizeErr := normalizeRedirectURI(opts.RedirectURI)
 		if normalizeErr != nil {
@@ -117,11 +120,17 @@ func (launcher *ManagerLauncher) Start(ctx context.Context, opts ManageServerOpt
 	}
 	defer ln.Close()
 
+	redirectURI := strings.TrimSpace(opts.RedirectURI)
+	if redirectURI == "" {
+		redirectURI = listenerBaseURL(ln) + opts.BasePath + "/oauth2/callback"
+	}
+
 	app, err := NewManagerApplication(ManagerOptions{
 		Services:     opts.Services,
 		ForceConsent: opts.ForceConsent,
 		Client:       opts.Client,
-		RedirectURI:  resolveServerRedirectURI(ln, opts.RedirectURI),
+		RedirectURI:  redirectURI,
+		BasePath:     opts.BasePath,
 	}, launcher.applicationDependencies(ctx, store))
 	if err != nil {
 		return err
@@ -150,7 +159,7 @@ func (launcher *ManagerLauncher) Start(ctx context.Context, opts ManageServerOpt
 		}
 	}()
 
-	url := listenerBaseURL(ln)
+	url := listenerBaseURL(ln) + opts.BasePath + "/"
 
 	fmt.Fprintln(launcher.deps.Out, "Opening accounts manager in browser...")
 	fmt.Fprintln(launcher.deps.Out, "If the browser doesn't open, visit:", url)
