@@ -43,3 +43,18 @@ func TestManagerApplicationBasePath(t *testing.T) {
 		t.Fatalf("unprefixed: %d", rec.Code)
 	}
 }
+
+func TestManagerApplicationRedirectFromRequest(t *testing.T) {
+	app := newTestManagerApplication(t, ManagerOptions{BasePath: "/gog", RedirectFromRequest: true}, ManagerDependencies{})
+
+	r := httptest.NewRequest(http.MethodGet, "http://127.0.0.1:43843/gog/", nil)
+	if got := app.redirectURI(r); got != "http://127.0.0.1:43843/gog/oauth2/callback" {
+		t.Fatalf("direct: %s", got)
+	}
+
+	r.Header.Set("X-Forwarded-Proto", "https")
+	r.Header.Set("X-Forwarded-Host", "claw.ai-ml.pp.ua")
+	if got := app.redirectURI(r); got != "https://claw.ai-ml.pp.ua/gog/oauth2/callback" {
+		t.Fatalf("proxied: %s", got)
+	}
+}

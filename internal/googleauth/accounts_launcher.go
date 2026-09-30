@@ -121,16 +121,18 @@ func (launcher *ManagerLauncher) Start(ctx context.Context, opts ManageServerOpt
 	defer ln.Close()
 
 	redirectURI := strings.TrimSpace(opts.RedirectURI)
-	if redirectURI == "" {
+	redirectFromRequest := redirectURI == ""
+	if redirectFromRequest {
 		redirectURI = listenerBaseURL(ln) + opts.BasePath + "/oauth2/callback"
 	}
 
 	app, err := NewManagerApplication(ManagerOptions{
-		Services:     opts.Services,
-		ForceConsent: opts.ForceConsent,
-		Client:       opts.Client,
-		RedirectURI:  redirectURI,
-		BasePath:     opts.BasePath,
+		Services:            opts.Services,
+		ForceConsent:        opts.ForceConsent,
+		Client:              opts.Client,
+		RedirectURI:         redirectURI,
+		BasePath:            opts.BasePath,
+		RedirectFromRequest: redirectFromRequest,
 	}, launcher.applicationDependencies(ctx, store))
 	if err != nil {
 		return err

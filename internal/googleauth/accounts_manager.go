@@ -43,6 +43,9 @@ type ManagerOptions struct {
 	Client       string
 	RedirectURI  string
 	BasePath     string
+	// RedirectFromRequest derives the callback URL from each request's
+	// (proxy-aware) scheme and host; RedirectURI is the fallback.
+	RedirectFromRequest bool
 }
 
 // ManagerDependencies contains the accounts manager's external operations.
@@ -267,7 +270,7 @@ func (app *ManagerApplication) handleAuthStart(w http.ResponseWriter, r *http.Re
 		ClientID:     creds.ClientID,
 		ClientSecret: creds.ClientSecret,
 		Endpoint:     app.deps.OAuthEndpoint,
-		RedirectURL:  app.opts.RedirectURI,
+		RedirectURL:  app.redirectURI(r),
 		Scopes:       scopes,
 	}
 
@@ -318,7 +321,7 @@ func (app *ManagerApplication) handleAuthUpgrade(w http.ResponseWriter, r *http.
 		ClientID:     creds.ClientID,
 		ClientSecret: creds.ClientSecret,
 		Endpoint:     app.deps.OAuthEndpoint,
-		RedirectURL:  app.opts.RedirectURI,
+		RedirectURL:  app.redirectURI(r),
 		Scopes:       scopes,
 	}
 
@@ -388,7 +391,7 @@ func (app *ManagerApplication) handleOAuthCallback(w http.ResponseWriter, r *htt
 		ClientID:     creds.ClientID,
 		ClientSecret: creds.ClientSecret,
 		Endpoint:     app.deps.OAuthEndpoint,
-		RedirectURL:  app.opts.RedirectURI,
+		RedirectURL:  app.redirectURI(r),
 		Scopes:       scopes,
 	}
 
@@ -819,4 +822,37 @@ func renderSuccessTemplate(
 		BasePath:         basePath,
 	}
 	_ = tmpl.Execute(w, data)
+}
+
+func firstHeaderValue(r *http.Request, name string) string {
+	value, _, _ := strings.Cut(r.Header.Get(name), ",")
+
+	return strings.TrimSpace(value)
+}
+
+// redirectURI returns the OAuth callback URL for r, honoring reverse-proxy
+// headers when the callback was not set explicitly.
+func (app *ManagerApplication) redirectURI(r *http.Request) string {
+	if !app.opts.RedirectFromRequest {
+		return app.opts.RedirectURI
+	}
+
+	host := firstHeaderValue(r, "X-Forwarded-Host")
+	if host == "" {
+		host = r.Host
+	}
+
+	if host == "" {
+		return app.opts.RedirectURI
+	}
+
+	scheme := firstHeaderValue(r, "X-Forwarded-Proto")
+	if scheme == "" {
+		scheme = "http"
+		if r.TLS != nil {
+			scheme = "https"
+		}
+	}
+
+	return scheme + "://" + host + app.opts.BasePath + "/oauth2/callback"
 }
